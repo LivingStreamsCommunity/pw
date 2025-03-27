@@ -239,55 +239,61 @@
             }
         }
         
-        async function getResourceFolders() {
-            let resourceList = document.getElementById("resources-list");
-            resourceList.innerHTML = "";
-            let pageToken = "";
-            
-            do {
-                let data = await fetchResourceFolders(pageToken);
-                if (!data || data.error) {
-                    resourceList.innerHTML = `<li>Error: ${data.error || "Unable to fetch data."}</li>`;
-                    return;
-                }
-                if (!data.files) {
-                    resourceList.innerHTML = `<li>No resource folders found.</li>`;
-                    return;
-                }
-                
-                const orderedResources = [
-                    "敬拜团时间表 LSC Worship Team Schedule",
-                    "敬拜团指南 LSC Worship Team Guideline",
-                    "敬拜团乐手指南 LSC Musicians Guideline",
-                    "约书亚乐团歌谱 Joshua Band OFFICIAL CHORDS",
-                    "赞美之泉歌谱 Stream of Praise OFFICIAL CHORDS",
-                    "赞美之泉敬拜工作坊 Stream of Praise WORKSHOP",
-                    "Muititrack.com CHORDS", "TOW Song Database", "Recordings"
-                ];
-                
-                let resourceMap = new Map();
-                data.files.forEach(file => {
-                    if (file.name.startsWith("_")) {
-                        let folderName = file.name.substring(1);
-                        resourceMap.set(folderName, file.id);
-                    }
-                });
-                
-                orderedResources.forEach(name => {
-                    if (resourceMap.has(name)) {
-                        resourceList.insertAdjacentHTML("beforeend", `<li><a href='https://drive.google.com/drive/folders/${resourceMap.get(name)}' target='_blank'>${name}</a></li>`);
-                    }
-                });
-                
-                if (resourceMap.size === 0) {
-                    resourceList.innerHTML = `<li>No resources available.</li>`;
-                }
-                
-                pageToken = data.nextPageToken || "";
-            } while (pageToken);
+async function getResourceFolders() {
+    let resourceList = document.getElementById("resources-list");
+    resourceList.innerHTML = ""; // Clear existing content
+    let pageToken = "";
+    let resourceMap = new Map(); // Ensure it's defined outside loop
+
+    do {
+        let data = await fetchResourceFolders(pageToken);
+        if (!data || data.error) {
+            resourceList.innerHTML = `<li>Error: ${data.error || "Unable to fetch data."}</li>`;
+            return;
         }
-        
-        document.addEventListener("DOMContentLoaded", getResourceFolders);
+        if (!data.files || data.files.length === 0) {
+            resourceList.innerHTML = `<li>No resource folders found.</li>`;
+            return;
+        }
+
+        data.files.forEach(file => {
+            if (file.name.startsWith("_")) {
+                let folderName = file.name.substring(1);
+                resourceMap.set(folderName, file.id);
+            }
+        });
+
+        pageToken = data.nextPageToken || "";
+    } while (pageToken);
+
+    // List the resources in a specific order
+    const orderedResources = [
+        "敬拜团时间表 LSC Worship Team Schedule",
+        "敬拜团指南 LSC Worship Team Guideline",
+        "敬拜团乐手指南 LSC Musicians Guideline",
+        "约书亚乐团歌谱 Joshua Band OFFICIAL CHORDS",
+        "赞美之泉歌谱 Stream of Praise OFFICIAL CHORDS",
+        "赞美之泉敬拜工作坊 Stream of Praise WORKSHOP",
+        "Muititrack.com CHORDS", "TOW Song Database", "Recordings"
+    ];
+
+    let resourceHTML = "";
+    orderedResources.forEach(name => {
+        if (resourceMap.has(name)) {
+            resourceHTML += `<li><a href='https://drive.google.com/drive/folders/${resourceMap.get(name)}' target='_blank'>${name}</a></li>`;
+        }
+    });
+
+    // Ensure we only replace the content after processing everything
+    if (resourceHTML) {
+        resourceList.innerHTML = resourceHTML;
+    } else {
+        resourceList.innerHTML = `<li>No resources available.</li>`;
+    }
+}
+
+// Run function on page load
+document.addEventListener("DOMContentLoaded", getResourceFolders);
     </script>
 </body>
 </html>
